@@ -89,7 +89,7 @@ int main()
 //--------------------------------------------------------------------
 // TODO scramble function: pass key and a pointer to the file to scramble
 // need to pass a pointer to the output file as a function would delete Outputbuffer on exit
- 
+  
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff)    // pass pointer to source file
 {
 	bitset <8> bKey;
