@@ -6,7 +6,7 @@ scramble compression
 
 About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
 
-*/
+**/
 // TODO (DevBase#1#): add debuging conditions to code
 
 #include <iostream>
@@ -72,24 +72,22 @@ int main()
 
 	cout << endl;
 //--------------------------------------------------------------------
-//-------------------------------------------------------------
 // void scramble(vector<int> & inputbuffer);    // pass pointer to source file
 
 	uint8_t sk = 8;				// test key
 	scramble(sk, inputBuffer);	// scramble key and pass pointer to source file
 
 //---------------------------------------------------------------------
-// free allocated space
 	cout << "Total number of bits " << length*8 << endl;
 	cout << "inputbuffer capacity " << inputBuffer.capacity() << endl;
 
 	return 0;
 }  // end main
 
-//--------------------------------------------------------------------
-// TODO scramble function: pass key and a pointer to the file to scramble
-// need to pass a pointer to the output file as a function would delete Outputbuffer on exit
-  
+/*--------------------------------------------------------------------
+	TODO scramble function: pass key and a pointer to the file to scramble
+	need to pass a pointer to the output file as a function would delete Outputbuffer on exit */
+
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff)    // pass pointer to source file
 {
 	bitset <8> bKey;
@@ -130,17 +128,23 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff)    // pass pointer to sour
 	bitset <8> tempBits;
 	for (int i=0; i<size; i++)
 	{
-		if (i%8==0&&i>0) { cout << endl;}         // limit 8 per line
-		cout << inBuff[i] << ":";	// out put input file
-		tempBits = (int) inBuff[i];        // gets a byte from the file
-		cout << tempBits << " ";
+		if (i%8==0&&i>0) { cout << endl;}	// limit 8 per line
+		cout << inBuff[i] << ":";			// out put input file
+		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
+		cout << tempBits << " ";			// display it for now.
 	}		// loop through byte extraing bits into the two different parts
 	cout << endl;
 	
-// work out bit positions  
-// bitpoz = pos/8 with mod being index into bit
-// check if i can just use whole bytes 
+/*	work out bit positions  
+	bitpoz = pos/8 with mod being index into bit
+	check if i can just use whole bytes */ 
+	
+bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
+bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
 
+/*	may not need to worry about the one byte boundy over right as it's low bytes will be undefined
+	will need to test position of the bit overlap between 1bit and 0bit area. 
+	take input byte and put it into the output bytes,  when a byte is fullwrite it out to the output buffer. */
 
 }
 
