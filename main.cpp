@@ -150,7 +150,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 			{
 				if (zBitIdx==7)				// is byte full 
 											/* todo out of input data 
-											 *  test is out of input data to process the bit overlap*/
+											 *  test is out of input data to process the bit overlap */
 				{
 					// write byte function 
 					cout << "-" << zeroByte_output << "-";
