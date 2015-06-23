@@ -19,13 +19,12 @@ About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-v
 using namespace std;
 
 void pbin(int);         // nasty binary print function
-void scramble(uint8_t sKey, vector<uint8_t> & inBuff);    // pass pointer to source file
+void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff);    // pass pointer to source file
 
 // count number of 0 bits and 1 bits
 
 int main()
 {
-
 //	char  * myFileName = "C:/test_data/test.txt"; // should be string
 	char  * myFileName = "C:/test_data/test_s.txt"; // should be string
 
@@ -74,8 +73,10 @@ int main()
 //--------------------------------------------------------------------
 // void scramble(vector<int> & inputbuffer);    // pass pointer to source file
 
+	vector<uint8_t> outputBuffer(length);	// allocate output buffer, same size as input file
+
 	uint8_t sk = 8;				// test key
-	scramble(sk, inputBuffer);	// scramble key and pass pointer to source file
+	scramble(sk, inputBuffer, outputBuffer);	// scramble key and pass pointer to source file
 
 //---------------------------------------------------------------------
 	cout << "Total number of bits " << length*8 << endl;
@@ -88,25 +89,24 @@ int main()
 	TODO scramble function: pass key and a pointer to the file to scramble
 	need to pass a pointer to the output file as a function would delete Outputbuffer on exit */
 
-void scramble(uint8_t sKey, vector<uint8_t> & inBuff)    // pass pointer to source file
+void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)    // pass pointer to source file
 {
-	bitset <8> bKey;
-	// computer output buffer position
+	bitset <8> scrKey;
+
+	// computer output buffer position and output bit conters to manage over writing boundry 
 	
-	bKey= (int)sKey;
-	cout << "Scramble key = "<< bKey << endl;
- 
-	// outputBuffSize
+	scrKey= (int)sKey;
+	cout << "Scramble key = "<< scrKey << endl;
+
 	int size=inBuff.capacity();			// using capacity as .size() fails
-	
-	vector<uint8_t> OutputBuffer(size);	// allocate output buffer
+ 
 	double bitOutputSize0 = 0;			// contains next position for bit
 	double bitOutputPosition1 = 0;
 	int kpc0 = 0;  // key percentage 0 bits
 	
 // computer bit/byte position of 1bits 0 bits go into the first part of the output buffer
 
-	kpc0 = (8-bKey.count());			// work out how many 0 bits are in key
+	kpc0 = (8-scrKey.count());			// work out how many 0 bits are in scramble key
 
 	cout << endl << "number of zero bits the scamble key has = " << kpc0 << endl;
 	double percent = (double) kpc0 / 8;
@@ -125,22 +125,63 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff)    // pass pointer to sour
 	cout << "bit offset/remainder to 1bit area = " <<  z << endl<<endl;
 
 //---------
-	bitset <8> tempBits;
-	for (int i=0; i<size; i++)
-	{
-		if (i%8==0&&i>0) { cout << endl;}	// limit 8 per line
-		cout << inBuff[i] << ":";			// out put input file
-		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
-		cout << tempBits << " ";			// display it for now.
-	}		// loop through byte extraing bits into the two different parts
-	cout << endl;
-	
 /*	work out bit positions  
 	bitpoz = pos/8 with mod being index into bit
 	check if i can just use whole bytes */ 
+
+	bitset <8> tempBits;
 	
-bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
-bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
+	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
+	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
+
+	int zBitIdx = 0 , oBitIdx = 0;
+
+	for (int i=0; i<size; i++)
+	{
+		if (i%8==0&&i>0) { cout << endl;}	// limit 8 per line
+		cout << inBuff[i] << ":";			// out put input file as its a char for dev tests 
+		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
+		cout << tempBits << " ";			// display it for now.
+
+		for( int theBit = 0; theBit < 8 ; theBit++ )
+		{
+	//		cout << "x"<< theBit << "." << tempBits[theBit] << "=";
+			if (scrKey[theBit]==0)  			// test if scramble key bit is zero
+			{
+				if (zBitIdx==7)				// is byte full 
+											/* todo out of input data 
+											 *  test is out of input data to process the bit overlap*/
+				{
+					// write byte function 
+					cout << "-" << zeroByte_output << "-";
+
+					zBitIdx=0;
+					
+				}
+				// store bit
+				zeroByte_output[zBitIdx]=tempBits[theBit];
+				zBitIdx++;					// output bytes bit index
+
+			}
+			else							// scramble keybit was a one
+			{
+				if (oBitIdx==7)
+				{
+					// write byte function 
+					cout << ">" << oneByte_output << "<";
+					oBitIdx=0;
+					
+				}
+				// store bit
+				oneByte_output[oBitIdx]=tempBits[theBit];
+				++oBitIdx;
+			}
+		}
+		
+		
+	}		// loop through byte extraing bits into the two different parts
+	cout << endl;
+	
 
 /*	may not need to worry about the one byte boundy over right as it's low bytes will be undefined
 	will need to test position of the bit overlap between 1bit and 0bit area. 
