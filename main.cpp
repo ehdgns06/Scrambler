@@ -132,8 +132,15 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 //---------
 /*	work out bit positions  
 	bitpoz = pos/8 with mod being index into bit
-	check if i can just use whole bytes */ 
+	check if i can just use whole bytes
 
+	ob0x and ob1x are byte indexs but i think i need to use a bit index
+	i also need to track that overlap between 0bit and 1bit split.
+ */ 
+
+	int ob0x = 0;		// output buffer zero bit index
+	int ob1x = bitOutputPosition1/8;		// output buffer one  bit index
+	
 	bitset <8> tempBits;
 	
 	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
@@ -154,13 +161,13 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	//		cout << "x"<< theBit << "." << tempBits[theBit] << "=";
 			if (scrKey[theBit]==0)  			// test if scramble key bit is zero
 			{
-				if (zBitIdx==7)				// is byte full 
+				if (zBitIdx==8)				// is byte full 
 				{
 				/* todo out of input data 
 				 * test is out of input data to process the bit overlap */
 				// write byte function 
-				//	outBuff[xxxxxxxxxxx] = (uint8_t) zeroByte_output;
-								// todo need to convert the bitset to an int then to uint8_t
+				outBuff[ob0x]= (uint8_t) zeroByte_output.to_ulong();
+				ob0x++;
 
 					zBitIdx=0;
 					
@@ -172,11 +179,14 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 			}
 			else							// scramble keybit was a one
 			{
-				if (oBitIdx==7)
+				if (oBitIdx==8)
 				{
 					// write byte function 
 				//	outBuff[xxxxxxxxxxx] = (uint8_t) oneByte_output;
 				// todo need to convert the bitset to an int then to uint8_t
+					outBuff[ob1x]= (uint8_t) oneByte_output.to_ulong();
+					ob1x++;
+				//	cout << endl << "xx" << oneByte_output <<endl;
 					oBitIdx=0;
 					
 				}
