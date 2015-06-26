@@ -140,46 +140,48 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 
 	int ob0x = 0;		// output buffer zero bit index
 	int ob1x = bitOutputPosition1/8;		// output buffer one  bit index
-	
+
+	int zeroBitIdx = 0;
+	int oneBitIdx = (int) z;		// i still have reversed bits issues.
+	int bitProcessed = 0;
+
 	bitset <8> tempBits;
 	
 	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
 	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
 
-	int zBitIdx = 0 , oBitIdx = 0, bitProcessed = 0;
 
 	for (int i=0; i<size; i++)
 	{
 		if (i%7==0&&i>0) { cout << endl;}
-//		cout << inBuff[i] << ":";			// display input file as its a char for dev tests 
+ 
 		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
 		cout << tempBits << " ";			// display input data.
 
-		for( int theBit = 0; theBit < 8 ; theBit++ )
+		for( int theBit = 0; theBit < 8 ; theBit++ )   // should this loop be 8->0 -- to cottect bit order
 		{
-			bitProcessed++;	// bit processed counter
-	//		cout << "x"<< theBit << "." << tempBits[theBit] << "=";
+			bitProcessed++;					// bit processed counter
 			if (scrKey[theBit]==0)  			// test if scramble key bit is zero
 			{
-				if (zBitIdx==8)				// is byte full 
+				if (zeroBitIdx==8)				// is byte full 
 				{
-				/* todo out of input data 
+				/* todo out of input data - bits are backwards :(
 				 * test is out of input data to process the bit overlap */
 				// write byte function 
-				outBuff[ob0x]= (uint8_t) zeroByte_output.to_ulong();
-				ob0x++;
+					outBuff[ob0x]= (uint8_t) zeroByte_output.to_ulong();
+					ob0x++;
 
-					zBitIdx=0;
+					zeroBitIdx=0;	// reset the zero bit index for forming a byte 
 					
 				}
 				// store bit
-				zeroByte_output[zBitIdx]=tempBits[theBit];
-				zBitIdx++;					// output bytes bit index
+				zeroByte_output[zeroBitIdx]=tempBits[theBit];
+				zeroBitIdx++;					// output bytes bit index
 
 			}
 			else							// scramble keybit was a one
 			{
-				if (oBitIdx==8)
+				if (oneBitIdx==8)
 				{
 					// write byte function 
 				//	outBuff[xxxxxxxxxxx] = (uint8_t) oneByte_output;
@@ -187,12 +189,12 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 					outBuff[ob1x]= (uint8_t) oneByte_output.to_ulong();
 					ob1x++;
 				//	cout << endl << "xx" << oneByte_output <<endl;
-					oBitIdx=0;
+					oneBitIdx=0;
 					
 				}
 				// store bit
-				oneByte_output[oBitIdx]=tempBits[theBit];
-				++oBitIdx;
+				oneByte_output[oneBitIdx]=tempBits[theBit];
+				++oneBitIdx;
 			}
 		}
 		
@@ -205,6 +207,8 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 		tempBits = (int) outBuff[i];
 		cout << tempBits << " ";
 	}
+
+	cout << endl;
 
 /*	may not need to worry about the one byte boundy over right as it's low bytes will be undefined
 	will need to test position of the bit overlap between 1bit and 0bit area. 
