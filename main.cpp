@@ -119,7 +119,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	bitOutputSize0 = size * percent * 8;					// times 8 to convert bytes to bits
 	cout << "zero bit output size = " <<  bitOutputSize0 << endl;	
 
-	bitOutputPosition1 = bitOutputSize0;
+	bitOutputPosition1 = bitOutputSize0+1;   // todo +1 ?????
 	// above is borked and needs testing over a smaller range like 17 bytes  (a prime size test for reminers)
 	// could also test in a size loop 2bytes to 255 bytes
 	
@@ -138,18 +138,18 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	i also need to track that overlap between 0bit and 1bit split.
  */ 
 
-	int ob0x = 0;		// output buffer zero bit index
-	int ob1x = bitOutputPosition1/8;		// output buffer one  bit index
+	int ob0x = 0;						// output buffer zero bit index
+	int ob1x = bitOutputPosition1/8;	// output buffer one  bit index??????????????????????????
 
 	int zeroBitIdx = 0;
-	int oneBitIdx = (int) z;		// i still have reversed bits issues.
-	int bitProcessed = 0;
+	int oneBitIdx = (int) z+1;		// start of one bits poz
+	int bitProcessed = 0;			// 
 
 	bitset <8> tempBits;
 	
 	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
 	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
-
+	bitset <8> overlapByte;			// used to store the overlap byte
 
 	for (int i=0; i<size; i++)
 	{
@@ -160,36 +160,37 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 
 		for( int theBit = 0; theBit < 8 ; theBit++ )   // should this loop be 8->0 -- to cottect bit order
 		{
-			bitProcessed++;					// bit processed counter
+			bitProcessed++;						// bit processed counter
 			if (scrKey[theBit]==0)  			// test if scramble key bit is zero
 			{
 				if (zeroBitIdx==8)				// is byte full 
 				{
 				/* todo out of input data - bits are backwards :(
-				 * test is out of input data to process the bit overlap */
+				 * test is out of input data to process the bit overlap 
+				 */
 				// write byte function 
 					outBuff[ob0x]= (uint8_t) zeroByte_output.to_ulong();
 					ob0x++;
 
 					zeroBitIdx=0;	// reset the zero bit index for forming a byte 
-					
+					cout << "z" << zeroByte_output << "z ";
 				}
 				// store bit
 				zeroByte_output[zeroBitIdx]=tempBits[theBit];
-				zeroBitIdx++;					// output bytes bit index
+				zeroBitIdx++;				// output bytes bit index
 
 			}
-			else							// scramble keybit was a one
+			else							// scramble key bit was a one
 			{
 				if (oneBitIdx==8)
 				{
 					// write byte function 
-				//	outBuff[xxxxxxxxxxx] = (uint8_t) oneByte_output;
-				// todo need to convert the bitset to an int then to uint8_t
+
 					outBuff[ob1x]= (uint8_t) oneByte_output.to_ulong();
 					ob1x++;
-				//	cout << endl << "xx" << oneByte_output <<endl;
+
 					oneBitIdx=0;
+					cout << "-" << oneByte_output << "- ";
 					
 				}
 				// store bit
@@ -225,10 +226,3 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 //		bit			// value of bit being set
 // )
 // 
-// computer byte bit position
-
-//  void BitDrop( 	vector<uint8_t>, long bitpos, int bit)
-
-//	bitOutputSize0 
-//    double z = fmod((bitOutputSize0),8);
-//	cout << "bit offset/remainder to 1bit area = " <<  z << endl<<endl;
