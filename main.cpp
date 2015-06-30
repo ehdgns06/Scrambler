@@ -1,10 +1,11 @@
 /**
  @param should_pass_it_a_file
+
  @authr Brett Cooper
 
-scramble compression
+	scramble compression
 
-About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
+	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
 
 **/
 // TODO (DevBase#1#): add debuging conditions to code
@@ -18,10 +19,17 @@ About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-v
 
 using namespace std;
 
-void pbin(int);         // nasty binary print function
+// predefine functions
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff);    // pass pointer to source file
 
-// count number of 0 bits and 1 bits
+
+/* TODO scramble function: pass key and a pointer to the file to scramble
+*	
+* once i workout the 1bit start pos i can then track it for that overlap byte
+*
+* easy way to test the split is to have the test file filled with the value of the scramble key
+* that way i would end up with all zero and one bits.
+*/
 
 int main()
 {
@@ -32,17 +40,14 @@ int main()
 
 	vector<uint8_t> inputBuffer;
 
-
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
-	cout << "Scramble Compression test file: " << myFileName << endl<< endl;
+	cout << endl << "Scramble Compression test file: " << myFileName;
 
 	//-----------------------------------------------------------------------
 	// loadFile
 
 	ifstream myFileStream;
-	myFileStream.open ( myFileName, ios::binary );  // open file
-													// above should be on an if incase of a fail or test good
-
+	myFileStream.open ( myFileName, ios::binary );  // open file - should be on an if incase of a fail or test good
 	myFileStream.seekg (0, ios::end);				// get length of file:
 	length = myFileStream.tellg();
 	myFileStream.seekg (0, ios::beg);				// reset the file index
@@ -60,23 +65,15 @@ int main()
 
 	myFileStream.close();
 //-------------------------------------------------------------------
-	cout  << length << " bytes in file" << endl;
-
-//  count the number of same byte values in the file
-//    for (int i=0; i < 256; i++) {
-//      cout << i << " is " << ncount[i]<<": ";
-//
-//      if (i%8==0&&i>0) { cout << endl;}         // limit 8 per line
-//    }
-
-	cout << endl;
+	cout << ", " << length << " bytes long" << endl << endl;
 //--------------------------------------------------------------------
-// void scramble(vector<int> & inputbuffer);    // pass pointer to source file
 
-	vector<uint8_t> outputBuffer(length);	// allocate output buffer, same size as input file
+	vector<uint8_t> outputBuffer(length);		// allocate output buffer, same size as input file
 
 	uint8_t sk = 50;	// test key
 	scramble(sk, inputBuffer, outputBuffer);	// scramble key and pass pointer to source file
+
+// todo unscramble and test to orgional file.
 
 //---------------------------------------------------------------------
 	cout << "Total number of bits " << length*8 << endl;
@@ -85,46 +82,35 @@ int main()
 	return 0;
 }  // end main
 
-/*--------------------------------------------------------------------
-*	TODO scramble function: pass key and a pointer to the file to scramble
-*	
-* once i workout the 1bit start pos i can then track it for that overlap byte
-*
-* easy way to test the split is to have the test file filled with the value of the scramble key
-* that way i would end up with all zero and one bits.
-*/
-
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)    // pass pointer to source file
 {
 	bitset <8> scrKey;
+	scrKey= (int)sKey;		// convert scrambe key into a binary value
+	cout << "Scramble key = "<< scrKey << " ";
 
 	// computer output buffer position and output bit conters to manage over writing boundry 
-	
-	scrKey= (int)sKey;
-	cout << "Scramble key = "<< scrKey << endl;
+	// computer bit/byte position of 1bits 0 bits go into the first part of the output buffer
 
-	int size=inBuff.capacity();			// using capacity as .size() fails
+	int inputFileSize=inBuff.capacity();			// using capacity as .size() fails
  
-	double bitOutputSize0 = 0;			// contains next position for bit
+	double bitOutputSize0 = 0;			// contains next position for bit, zero bits start from postion 0
 	double bitOutputPosition1 = 0;
-	int kpc0 = 0;  // key percentage 0 bits
 	
-// computer bit/byte position of 1bits 0 bits go into the first part of the output buffer
+	int zeroBitsInScrambleKey = (8-scrKey.count());		// returns number of 0 bits are in scramble key
 
-	kpc0 = (8-scrKey.count());			// work out how many 0 bits are in scramble key
+	cout << "containing " << zeroBitsInScrambleKey << " zero bits" << endl;
 
-	cout << endl << "number of zero bits the scamble key has = " << kpc0 << endl;
-	double percent = (double) kpc0 / 8;
-	cout << endl << "percentage of output file zero bits will consume = %" << ((double) percent*100) << endl << endl;
-	bitOutputSize0 = size * percent * 8;					// times 8 to convert bytes to bits
-	cout << "zero bit output size = " <<  bitOutputSize0 << endl;	
-
-	bitOutputPosition1 = bitOutputSize0+1;   // todo +1 ?????
-	// above is borked and needs testing over a smaller range like 17 bytes  (a prime size test for reminers)
-	// could also test in a size loop 2bytes to 255 bytes
+	double percentOfZeroBitsInScrambleKey = (double) zeroBitsInScrambleKey / 8;
+	cout << endl << "The Output file that zero bits will use is %" << ((double) percentOfZeroBitsInScrambleKey*100) << endl << endl;
+	bitOutputSize0 = (inputFileSize * percentOfZeroBitsInScrambleKey) * 8;	// times 8 to convert bytes to bits
 	
-	cout << "bit position for key 1 bits  = " <<  bitOutputPosition1 << endl << endl;
-	cout << "byte position  = " <<  bitOutputPosition1/8 << endl << endl;
+	cout << "The zero bit output size uses " <<  bitOutputSize0 << " bits" << endl;	
+	
+	bitOutputPosition1 = bitOutputSize0; // + the bit offset. which is backwards due to bin coding <- and logic coding ->
+	
+	/* todo byte poz is out */
+	cout << "The bit position for the 1 bits starts at bit " <<  bitOutputPosition1;
+	cout << ", byte position " <<  bitOutputPosition1/8 << endl << endl;
 	
     double z = fmod((bitOutputPosition1),8);		// if 0 its on a byte boundy
 	cout << "bit offset/remainder to 1bit area = " <<  z << endl<<endl;
@@ -132,7 +118,8 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 //---------
 /*	work out bit positions  
 	bitpoz = pos/8 with mod being index into bit
-	check if i can just use whole bytes
+	
+	 * overlapByte
 
 	ob0x and ob1x are byte indexs but i think i need to use a bit index
 	i also need to track that overlap between 0bit and 1bit split.
@@ -142,7 +129,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	int ob1x = bitOutputPosition1/8;	// output buffer one  bit index??????????????????????????
 
 	int zeroBitIdx = 0;
-	int oneBitIdx = (int) z+1;		// start of one bits poz
+	int oneBitIdx = (int) z+1;		// start of one bits poz or overlap
 	int bitProcessed = 0;			// 
 
 	bitset <8> tempBits;
@@ -151,7 +138,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
 	bitset <8> overlapByte;			// used to store the overlap byte
 
-	for (int i=0; i<size; i++)
+	for (int i=0; i<inputFileSize; i++)
 	{
 		if (i%7==0&&i>0) { cout << endl;}
  
@@ -202,7 +189,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 		
 	}		// loop through byte extraing bits into the two different parts
 	cout << endl << endl;
-	for (int i=0; i<size; i++)
+	for (int i=0; i<inputFileSize; i++)
 	{
 		if (i%7==0&&i>0) { cout << endl;}
 		tempBits = (int) outBuff[i];
@@ -215,7 +202,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	will need to test position of the bit overlap between 1bit and 0bit area. 
 	take input byte and put it into the output bytes,  when a byte is fullwrite it out to the output buffer. */
 
-}
+} // end main
 
 //------------------------------------------------
 // TODO will also need a BitPickup
@@ -225,4 +212,4 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 //		bitpos,		// bit position
 //		bit			// value of bit being set
 // )
-// 
+
