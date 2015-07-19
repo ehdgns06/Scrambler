@@ -8,7 +8,6 @@
 	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
 
 **/
-// TODO (DevBase#1#): add debuging conditions to code
 
 #include <iostream>
 #include <iomanip>
@@ -23,14 +22,12 @@ using namespace std;
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff);    // pass pointer to source file
 
 
-/* TODO scramble function: pass key and a pointer to the file to scramble
 *	
 * once i workout the 1bit start pos i can then track it for that overlap byte
 *
 * easy way to test the split is to have the test file filled with the value of the scramble key
 * that way i would end up with all zero and one bits.
 */
-
 int main()
 {
 //	char  * myFileName = "C:/test_data/test.txt"; // should be string
@@ -101,35 +98,45 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 	cout << "containing " << zeroBitsInScrambleKey << " zero bits" << endl;
 
 	double percentOfZeroBitsInScrambleKey = (double) zeroBitsInScrambleKey / 8;
-	cout << endl << "The Output file that zero bits will use is %" << ((double) percentOfZeroBitsInScrambleKey*100) << endl << endl;
+	cout << endl << "The Output file has %" << ((double) percentOfZeroBitsInScrambleKey*100) << " zero bits, ";
 	bitOutputSize0 = (inputFileSize * percentOfZeroBitsInScrambleKey) * 8;	// times 8 to convert bytes to bits
 	
-	cout << "The zero bit output size uses " <<  bitOutputSize0 << " bits" << endl;	
+	cout << "That is " <<  bitOutputSize0 << " bits." << endl << endl;	
 	
 	bitOutputPosition1 = bitOutputSize0; // + the bit offset. which is backwards due to bin coding <- and logic coding ->
 	
 	/* todo byte poz is out */
-	cout << "The bit position for the 1 bits starts at bit " <<  bitOutputPosition1;
-	cout << ", byte position " <<  bitOutputPosition1/8 << endl << endl;
+	cout << "The bit position for the 1 bits starts at bit " <<  bitOutputPosition1 << endl;
+//	cout << ", byte position " <<  bitOutputPosition1/8 << endl;
+	int overlapPoz = floor (bitOutputPosition1/8);
+	cout << "Overlap position is at byte " << overlapPoz;	// overlap byte is at bitOutputPosition1/8
 	
-    double z = fmod((bitOutputPosition1),8);		// if 0 its on a byte boundy
-	cout << "bit offset/remainder to 1bit area = " <<  z << endl<<endl;
-
+    double overlapBitOffset = fmod((bitOutputPosition1),8);		// if 0 its on a byte boundy
+	cout << ", The 1bits start at bit " <<  overlapBitOffset << endl<<endl;
+	
 //---------
-/*	work out bit positions  
+/*	workout bit positions  
 	bitpoz = pos/8 with mod being index into bit
 	
-	 * overlapByte
+	overlapByte
 
 	ob0x and ob1x are byte indexs but i think i need to use a bit index
 	i also need to track that overlap between 0bit and 1bit split.
+
+	ob1x = overlapPoz
+	
+	
+	// test if overlap bit when processsng a zero 
+	// start with putting the one bits into the overlap byte
+	// test if end of file and then write overlap byte 
+
  */ 
 
 	int ob0x = 0;						// output buffer zero bit index
-	int ob1x = bitOutputPosition1/8;	// output buffer one  bit index??????????????????????????
-
+	int ob1x = bitOutputPosition1/8;	// output buffer one  bit index, also position of overlap bit
+	cout << "ob1x " << ob1x << endl;
 	int zeroBitIdx = 0;
-	int oneBitIdx = (int) z+1;		// start of one bits poz or overlap
+	int oneBitIdx = (int) overlapBitOffset+1;		// start of one bits poz or overlap ( +1  could be zero ?????)
 	int bitProcessed = 0;			// 
 
 	bitset <8> tempBits;
@@ -140,7 +147,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 
 	for (int i=0; i<inputFileSize; i++)
 	{
-		if (i%7==0&&i>0) { cout << endl;}
+		if (i%7==0&&i>0) { cout << endl;}  // text output formating
  
 		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
 		cout << tempBits << " ";			// display input data.
@@ -160,7 +167,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 					ob0x++;
 
 					zeroBitIdx=0;	// reset the zero bit index for forming a byte 
-					cout << "z" << zeroByte_output << "z ";
+					cout << "." << zeroByte_output << ". ";
 				}
 				// store bit
 				zeroByte_output[zeroBitIdx]=tempBits[theBit];
@@ -177,7 +184,7 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 					ob1x++;
 
 					oneBitIdx=0;
-					cout << "-" << oneByte_output << "- ";
+					cout << "'" << oneByte_output << "' ";
 					
 				}
 				// store bit
@@ -187,7 +194,11 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 		}
 		
 		
-	}		// loop through byte extraing bits into the two different parts
+	}		// end of processing file.  loop through byte extraing bits into the two different parts
+
+// write overlap byte to output file
+
+// display processed file
 	cout << endl << endl;
 	for (int i=0; i<inputFileSize; i++)
 	{
@@ -204,12 +215,4 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 
 } // end main
 
-//------------------------------------------------
-// TODO will also need a BitPickup
-
-// void BitDrop(
-//		vecout		// pointer vector output file,
-//		bitpos,		// bit position
-//		bit			// value of bit being set
-// )
 
