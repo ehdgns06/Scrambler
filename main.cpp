@@ -18,22 +18,30 @@
 
 using namespace std;
 
+/*!
+ * scramble()
+ * @param sKey
+ * @param inBuff
+ * @param outBuff
+ */
+
+
 // predefine functions
 void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff);    // pass pointer to source file
 
 
-//*
-//* once i workout the 1bit start pos i can then track it for that overlap byte
-//*
-//* easy way to test the split is to have the test file filled with the value of the scramble key
-//* that way i would end up with all zero and one bits.
+// once i workout the 1bit start pos i can then track it for that overlap byte
+//
+// easy way to test the split is to have the test file filled with the value of the scramble key
+// that way i would end up with all zero and one bits.
 
 
 int main()
 {
-	auto myFileName = "C:/test_data/test.zip";
+//    auto myFileName = "C:/test_data/test.zip";
+    auto myFileName = "C:/test_data/test.txt";
 
-	int length;
+    unsigned long long int length;
 
 	vector<uint8_t> inputBuffer;
 
@@ -46,7 +54,7 @@ int main()
 	ifstream myFileStream;
 	myFileStream.open ( myFileName, ios::binary );  // open file - should be on an if incase of a fail or test good
 	myFileStream.seekg (0, ios::end);				// get length of file:
-	length = myFileStream.tellg();
+	length = (unsigned long long int) myFileStream.tellg();
 	myFileStream.seekg (0, ios::beg);				// reset the file index
 
 	inputBuffer.reserve( length );					// allocate vector space for file
@@ -55,14 +63,14 @@ int main()
 	int nxd=0;
 	while (myFileStream.good())						// loop while extraction from file is possible
 	 {
-	   inputBuffer[nxd] = myFileStream.get();		// get character from file and put into vector 
+	   inputBuffer[nxd] = (uint8_t) myFileStream.get();		// get character from file and put into vector
 	   ncount[inputBuffer[nxd]]++;					// count number of different bytes/characters here.
 	   nxd++;
 	 }
 
 	myFileStream.close();
 //-------------------------------------------------------------------
-	cout << ", " << length << " bytes long" << endl << endl;
+	cout << ", " << length << " bytes long" << endl;
 //--------------------------------------------------------------------
 
 	vector<uint8_t> outputBuffer(length);		// allocate output buffer, same size as input file
@@ -74,13 +82,14 @@ int main()
 
 //---------------------------------------------------------------------
 	cout << "Total number of bits " << length*8 << endl;
-	cout << "inputbuffer capacity " << inputBuffer.capacity() << endl;
+	cout << "input buffer capacity " << inputBuffer.capacity() << endl;
 
 	return 0;
 }  // end main
 
-//----------------------------------------------------------------------
-
+/* ----------------------------------------------------------------------
+   main routine
+*/
 
 void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)    // pass pointer to source file
 {
@@ -91,17 +100,17 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	// computer output buffer position and output bit counters to manage over writing boundry
 	// computer bit/byte position of 1bits 0 bits go into the first part of the output buffer
 
-	int inputFileSize=inBuff.capacity();			// using capacity as .size() fails
+	unsigned long long int inputFileSize=inBuff.capacity();			// using capacity as .size() fails
 
 	double bitOutputSize0 = 0;			// contains next position for bit, zero bits start from postion 0
 	double bitOutputPosition1 = 0;
 
-	int zeroBitsInScrambleKey = (8-scrKey.count());		// returns number of 0 bits are in scramble key
+    uint8_t zeroBitsInScrambleKey = (uint8_t) (8-scrKey.count());		// returns number of 0 bits are in scramble key
 
-	cout << "containing " << zeroBitsInScrambleKey << " zero bits" << endl;
+	cout << "containing " << (int) zeroBitsInScrambleKey << " bits that are zero " << endl;
 
 	double percentOfZeroBitsInScrambleKey = (double) zeroBitsInScrambleKey / 8;
-	cout << endl << "The Output file has %" << ((double) percentOfZeroBitsInScrambleKey*100) << " zero bits, ";
+	cout << endl << "The Output file has %" << ( percentOfZeroBitsInScrambleKey*100) << " zero bits, ";
 	bitOutputSize0 = (inputFileSize * percentOfZeroBitsInScrambleKey) * 8;	// times 8 to convert bytes to bits
 
 	cout << "That is " <<  bitOutputSize0 << " bits." << endl << endl;
@@ -109,13 +118,13 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	bitOutputPosition1 = bitOutputSize0; // + the bit offset. which is backwards due to bin coding <- and logic coding ->
 
 	/* todo byte poz is out */
-	cout << "The bit position for the 1 bits starts at bit " <<  bitOutputPosition1 << endl;
+	cout << "The bit position for the 1 bits file/block starts at bit " <<  bitOutputPosition1 << endl;
 //	cout << ", byte position " <<  bitOutputPosition1/8 << endl;
-	int overlapPoz = floor (bitOutputPosition1/8);
-	cout << "Overlap position is at byte " << overlapPoz;	// overlap byte is at bitOutputPosition1/8
+	int overlapPoz = (int) floor (bitOutputPosition1/8);
+	cout << "The overlap position is on byte " << overlapPoz;	// overlap byte is at bitOutputPosition1/8
 
 	double overlapBitOffset = fmod((bitOutputPosition1),8);		// if 0 its on a byte boundy
-	cout << ", The 1bits start at bit " <<  overlapBitOffset << endl<<endl;
+	cout << " and the 1bits start at bit " <<  overlapBitOffset << endl<<endl;
 
 //---------
 /*	workout bit positions
@@ -146,14 +155,14 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 
 	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
 	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
-	bitset <8> overlapByte;			// used to store the overlap byte
+//	bitset <8> overlapByte;			// used to store the overlap byte
 
 	for (int i=0; i<inputFileSize; i++)
 	{
-		if (i%7==0&&i>0) { cout << endl;}  // text output formating
+//		if (i%7==0&&i>0) { cout << endl;}  // text output formating
 
 		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
-		cout << tempBits << " ";			// display input data.
+//		cout << tempBits << " ";			// display input data.
 
 		for( int theBit = 0; theBit < 8 ; theBit++ )   // should this loop be 8->0 -- to cottect bit order
 		{
@@ -170,7 +179,7 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 					ob0x++;
 
 					zeroBitIdx=0;	// reset the zero bit index for forming a byte
-					cout << "." << zeroByte_output << ". ";
+//					cout << "." << zeroByte_output << ". ";
 				}
 				// store bit
 				zeroByte_output[zeroBitIdx]=tempBits[theBit];
@@ -187,7 +196,7 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 					ob1x++;
 
 					oneBitIdx=0;
-					cout << "'" << oneByte_output << "' ";
+//					cout << "'" << oneByte_output << "' ";
 
 				}
 				// store bit
@@ -202,15 +211,15 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 // write overlap byte to output file
 
 // display processed file
-	cout << endl << endl;
+//	cout << endl << endl;
 	for (int i=0; i<inputFileSize; i++)
 	{
-		if (i%7==0&&i>0) { cout << endl;}
+	//	if (i%7==0&&i>0) { cout << endl;}
 		tempBits = (int) outBuff[i];
-		cout << tempBits << " ";
+//		cout << tempBits << " ";
 	}
 
-	cout << endl;
+//	cout << endl;
 
 /*	may not need to worry about the one byte boundy over right as it's low bytes will be undefined
 	will need to test position of the bit overlap between 1bit and 0bit area.
