@@ -15,19 +15,12 @@
 #include <vector>
 #include <math.h>
 #include <bitset>
+#include <boost/dynamic_bitset.hpp>
 
 using namespace std;
 
-/*!
- * scramble()
- * @param sKey
- * @param inBuff
- * @param outBuff
- */
-
-
 // predefine functions
-void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff);    // pass pointer to source file
+//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file
 
 
 // once i workout the 1bit start pos i can then track it for that overlap byte
@@ -39,53 +32,79 @@ void scramble(uint8_t sKey, vector<uint8_t> & inBuff, vector<uint8_t> & outBuff)
 int main()
 {
 //    auto myFileName = "C:/test_data/test.zip";
-    auto myFileName = "C:/test_data/test.txt";
+//	auto myFileName = "C:/test_data/test.txt";
+	auto myFileName = "C:/test_data/testsmall.txt";
 
     unsigned long long int length;
-
-	vector<uint8_t> inputBuffer;
+	cout << endl << "Started" << endl;
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
-	cout << endl << "Scramble Compression test file: " << myFileName;
+	cout << endl << "Scramble Compression test file: " << myFileName <<endl;
 
 	//-----------------------------------------------------------------------
 	// loadFile
+    // todo  change to using boost dynamic bitset
 
 	ifstream myFileStream;
 	myFileStream.open ( myFileName, ios::binary );  // open file - should be on an if incase of a fail or test good
-	myFileStream.seekg (0, ios::end);				// get length of file:
+    if (!myFileStream.is_open()) perror("error while opening file");
+
+    myFileStream.seekg (0, ios::end);				// get length of file:
 	length = (unsigned long long int) myFileStream.tellg();
 	myFileStream.seekg (0, ios::beg);				// reset the file index
 
-	inputBuffer.reserve( length );					// allocate vector space for file
+    boost::dynamic_bitset<> inputfile_bits{(length*8)}; // allocate a dynamic bitset to the length of the file in bits
+    cout << "inputfile size() = " << inputfile_bits.size() << endl;
 
-	vector <int> ncount(255,0);
-	int nxd=0;
-	while (myFileStream.good())						// loop while extraction from file is possible
+    vector <int> ncount(255,0);                     // a vector to count up the number of types a bytes occurrence.
+    vector <long> bit_occurrence(8,0);               // find the most used bits in the file, used to generate scramble key, only tracking 1 bits
+    long inputfile_bitposition = 0;
+	int nextbyte_index=0;
+    uint8_t byte_read;
+    bitset<8> bits_read;
+
+
+    while(myFileStream >> byte_read)    // read in file loop one byte at a time  *** its reading an extra byte $ff :(
 	 {
-	   inputBuffer[nxd] = (uint8_t) myFileStream.get();		// get character from file and put into vector
-	   ncount[inputBuffer[nxd]]++;					// count number of different bytes/characters here.
-	   nxd++;
+   //     byte_read =  (uint8_t) myFileStream.get();		// get character from file and put into vector
+
+        ncount[byte_read]++;					// count number of different bytes/characters here.
+        bits_read = byte_read;		// convert the byte read into bits
+
+        // todo process them bits
+         for (int bities = 0; bities < 8 ; bities++) {
+             inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
+			 cout << "Bit was a " << bits_read[bities] << " at bit " << bities << endl;
+             if(bits_read[bities]){
+				 bit_occurrence[bities]++;                    // add to occurrence of bit the find key
+				// cout << "A bit was set at bit " << bities << endl;
+			 }
+			 ++inputfile_bitposition;
+         }
+
+         nextbyte_index++;
 	 }
+    if (myFileStream.bad()) perror("error while reading file");
 
 	myFileStream.close();
 //-------------------------------------------------------------------
-	cout << ", " << length << " bytes long" << endl;
+	cout << length << " bytes long" << endl;
 //--------------------------------------------------------------------
 
-	vector<uint8_t> outputBuffer(length);		// allocate output buffer, same size as input file
+	boost::dynamic_bitset<> outputBuffer(length*8);		// allocate output buffer, same size as input file
 
 	uint8_t sk = 50;	// test key
-	scramble(sk, inputBuffer, outputBuffer);	// scramble key and pass pointer to source file
+//	scramble(sk, inputfile_bits, outputBuffer);	// scramble key and pass pointer to source file
 
 // todo unscramble and test to orgional file.
 
 //---------------------------------------------------------------------
 	cout << "Total number of bits " << length*8 << endl;
-	cout << "input buffer capacity " << inputBuffer.capacity() << endl;
+//	cout << "input buffer capacity " << inputfile_bits.capacity() << endl;
 
-	return 0;
+    return 0;
 }  // end main
+
 
 /* ----------------------------------------------------------------------
    main routine
@@ -93,7 +112,7 @@ int main()
 
 void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)    // pass pointer to source file
 {
-	bitset <8> scrKey;
+    bitset <8> scrKey;
 	scrKey= (int)sKey;		// convert scramble key into a binary value
 	cout << "Scramble key = "<< scrKey << " ";
 
@@ -227,5 +246,6 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 
 }
 // end main
+
 
 
