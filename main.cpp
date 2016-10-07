@@ -1,9 +1,8 @@
 /**
- @param should_pass_it_a_file
-
- @authr Brett Cooper
-
-	scramble compression
+@param should_pass_it_a_file
+@authr Brett Cooper
+@version 0.5
+@title scramble compression
 
 	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
 
