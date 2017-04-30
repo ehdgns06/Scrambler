@@ -15,7 +15,6 @@
 #include <math.h>
 #include <bitset>
 #include <boost/dynamic_bitset.hpp>
-
 using namespace std;
 
 // predefine functions
@@ -27,14 +26,12 @@ using namespace std;
 // easy way to test the split is to have the test file filled with the value of the scramble key
 // that way i would end up with all zero and one bits.
 
-
 int main()
 {
-//    auto myFileName = "C:/test_data/test.zip";
+//  auto myFileName = "C:/test_data/test.zip";
 //	auto myFileName = "C:/test_data/test.txt";
-	auto myFileName = "C:/test_data/testsmall.txt";
+	auto myFileName = "C:/test_data/test_s.txt";
 
-    unsigned long long int length;
 	cout << endl << "Started" << endl;
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
@@ -45,68 +42,71 @@ int main()
     // todo  change to using boost dynamic bitset
 
 	ifstream myFileStream;
-	myFileStream.open ( myFileName, ios::binary );  // open file - should be on an if incase of a fail or test good
+	myFileStream.open ( myFileName, ios::binary );  // open file - should have an if incase of a fail or test good
     if (!myFileStream.is_open()) perror("error while opening file");
 
     myFileStream.seekg (0, ios::end);				// get length of file:
-	length = (unsigned long long int) myFileStream.tellg();
+    unsigned long length;
+	length = (unsigned long) myFileStream.tellg();
 	myFileStream.seekg (0, ios::beg);				// reset the file index
 
-    boost::dynamic_bitset<> inputfile_bits{(length*8)}; // allocate a dynamic bitset to the length of the file in bits
-    cout << "inputfile size() = " << inputfile_bits.size() << endl;
+    unsigned long number_of_bits;
+    number_of_bits = (length * 8);
+    boost::dynamic_bitset<> inputfile_bits{number_of_bits};   // allocate a dynamic bitset block (unsigned int)
+                                                                // to the length of the file in bits
+    cout << "inputfile.size() = " << inputfile_bits.size() << endl;
+    cout << "number of bits = " << number_of_bits << endl;
 
-    vector <int> ncount(255,0);                     // a vector to count up the number of types a bytes occurrence.
-    vector <long> bit_occurrence(8,0);               // find the most used bits in the file, used to generate scramble key, only tracking 1 bits
+    vector <int> ncount(255,0);             // a vector to count up the number of types a bytes occurrence.
+    vector <long> bit_occurrence(8,0);      // find the most used bits in the file, used to generate scramble key,
+                                            // only tracking 1 bits
     long inputfile_bitposition = 0;
 	int nextbyte_index=0;
     uint8_t byte_read;
-    bitset<8> bits_read;
+    bitset<8> bits_read;    // todo change to boost??
 
-
-    while(myFileStream >> byte_read)    // read in file loop one byte at a time  *** its reading an extra byte $ff :(
+    // main readfile loop ---------------------------------
+    while(myFileStream >> std::noskipws >> byte_read)   // read in file loop one byte at a time
 	 {
-   //     byte_read =  (uint8_t) myFileStream.get();		// get character from file and put into vector
+        ncount[byte_read]++;		// count number of different bytes by adding 1 to an array($ff) 0-FF
+        bits_read = byte_read;		// convert the byte read into bits format (boost format?)
 
-        ncount[byte_read]++;					// count number of different bytes/characters here.
-        bits_read = byte_read;		// convert the byte read into bits
+        // process them bits,  note reverse order of bits
+         for (int bities = 7; bities >=0 ; --bities) {
+            inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
+			 cout << bits_read[bities];
 
-        // todo process them bits
-         for (int bities = 0; bities < 8 ; bities++) {
-             inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
-			 cout << "Bit was a " << bits_read[bities] << " at bit " << bities << endl;
-             if(bits_read[bities]){
-				 bit_occurrence[bities]++;                    // add to occurrence of bit the find key
-				// cout << "A bit was set at bit " << bities << endl;
+             if(bits_read[bities]){                 // only track 1 bits
+				 bit_occurrence[bities]++;          // add to bits occurrence array (0-7) to find scramble key
+				 // cout << "A bit was set at bit " << bities << endl;
 			 }
 			 ++inputfile_bitposition;
-         }
-
+         }  // end of byte to bit process
+         cout << endl;
          nextbyte_index++;
-	 }
+	 } // end read file loop
     if (myFileStream.bad()) perror("error while reading file");
-
 	myFileStream.close();
 //-------------------------------------------------------------------
 	cout << length << " bytes long" << endl;
 //--------------------------------------------------------------------
 
-	boost::dynamic_bitset<> outputBuffer(length*8);		// allocate output buffer, same size as input file
+	boost::dynamic_bitset<> outputBuffer(number_of_bits);		// allocate output buffer, same size as input file
 
-	uint8_t sk = 50;	// test key
+	uint8_t sk = 50;	// todo test key hard coded
 //	scramble(sk, inputfile_bits, outputBuffer);	// scramble key and pass pointer to source file
-
 // todo unscramble and test to orgional file.
 
 //---------------------------------------------------------------------
-	cout << "Total number of bits " << length*8 << endl;
+	cout << "Total number of bits " << number_of_bits << endl;
 //	cout << "input buffer capacity " << inputfile_bits.capacity() << endl;
 
     return 0;
 }  // end main
 
-
 /* ----------------------------------------------------------------------
-   main routine
+   main scramble routine
+   todo change from vector use to dynamic bitstrean
 */
 
 void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)    // pass pointer to source file
@@ -138,10 +138,12 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	/* todo byte poz is out */
 	cout << "The bit position for the 1 bits file/block starts at bit " <<  bitOutputPosition1 << endl;
 //	cout << ", byte position " <<  bitOutputPosition1/8 << endl;
-	int overlapPoz = (int) floor (bitOutputPosition1/8);
+    int overlapPoz;
+    overlapPoz = (int) floor (bitOutputPosition1 / 8);
 	cout << "The overlap position is on byte " << overlapPoz;	// overlap byte is at bitOutputPosition1/8
 
-	double overlapBitOffset = fmod((bitOutputPosition1),8);		// if 0 its on a byte boundy
+    double overlapBitOffset;
+    overlapBitOffset = fmod((bitOutputPosition1), 8);        // if 0 its on a byte boundy
 	cout << " and the 1bits start at bit " <<  overlapBitOffset << endl<<endl;
 
 //---------
@@ -156,14 +158,14 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	ob1x = overlapPoz
 
 
-	// test if overlap bit when processsng a zero
+	// test if overlap bit when processing a zero
 	// start with putting the one bits into the overlap byte
 	// test if end of file and then write overlap byte
 
  */
 
 	int ob0x = 0;						// output buffer zero bit index
-	int ob1x = bitOutputPosition1/8;	// output buffer one  bit index, also position of overlap bit
+	int ob1x = (int) bitOutputPosition1/8;	// output buffer one  bit index, also position of overlap bit
 	cout << "ob1x " << ob1x << endl;
 	int zeroBitIdx = 0;
 	int oneBitIdx = (int) overlapBitOffset+1;		// start of one bits poz or overlap ( +1  could be zero ?????)
@@ -179,7 +181,7 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	{
 //		if (i%7==0&&i>0) { cout << endl;}  // text output formating
 
-		tempBits = (int) inBuff[i];			// gets a byte from the input file to process
+		tempBits = (bitset<8>) inBuff[i];			// gets a byte from the input file to process, was am int cast
 //		cout << tempBits << " ";			// display input data.
 
 		for( int theBit = 0; theBit < 8 ; theBit++ )   // should this loop be 8->0 -- to cottect bit order
@@ -233,7 +235,7 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	for (int i=0; i<inputFileSize; i++)
 	{
 	//	if (i%7==0&&i>0) { cout << endl;}
-		tempBits = (int) outBuff[i];
+		tempBits = (bitset<8>) outBuff[i];  // was (int) cast
 //		cout << tempBits << " ";
 	}
 
