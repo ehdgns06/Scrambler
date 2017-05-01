@@ -6,6 +6,8 @@
 
 	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
 
+ An experimental transformative algorythem
+
 **/
 
 #include <iostream>
@@ -13,12 +15,16 @@
 #include <fstream>
 #include <vector>
 #include <math.h>
-#include <bitset>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/foreach.hpp>
+
+#define foreach BOOST_FOREACH
+#define bitset	boost::dynamic_bitset
+
 using namespace std;
 
 // predefine functions
-//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file
+//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file todo
 
 
 // once i workout the 1bit start pos i can then track it for that overlap byte
@@ -52,7 +58,7 @@ int main()
 
     unsigned long number_of_bits;
     number_of_bits = (length * 8);
-    boost::dynamic_bitset<> inputfile_bits{number_of_bits};   // allocate a dynamic bitset block (unsigned int)
+    bitset<> inputfile_bits(number_of_bits);   // allocate a dynamic bitset block (unsigned int)
                                                                 // to the length of the file in bits
     cout << "inputfile.size() = " << inputfile_bits.size() << endl;
     cout << "number of bits = " << number_of_bits << endl;
@@ -62,36 +68,47 @@ int main()
                                             // only tracking 1 bits
     long inputfile_bitposition = 0;
 	int nextbyte_index=0;
-    uint8_t byte_read;
-    bitset<8> bits_read;    // todo change to boost??
+    uint8_t byte_read;						// 8 bit byte buffer for reading input file
+	bitset<> bits_read(8);
 
     // main readfile loop ---------------------------------
     while(myFileStream >> std::noskipws >> byte_read)   // read in file loop one byte at a time
 	 {
-        ncount[byte_read]++;		// count number of different bytes by adding 1 to an array($ff) 0-FF
-        bits_read = byte_read;		// convert the byte read into bits format (boost format?)
+		 bitset<> bits_read(8,byte_read);  // convert the byte read into bits format (boost format?)
 
-        // process them bits,  note reverse order of bits
+		 ncount[byte_read]++;			// count number of different bytes by adding 1 to an array($ff) 0-FF
+
+        // process them bytes into the huge bit array
          for (int bities = 7; bities >=0 ; --bities) {
-            inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
-			 cout << bits_read[bities];
+			 inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
+			 cout << bits_read[bities]; // debug
 
-             if(bits_read[bities]){                 // only track 1 bits
-				 bit_occurrence[bities]++;          // add to bits occurrence array (0-7) to find scramble key
-				 // cout << "A bit was set at bit " << bities << endl;
+             if(bits_read[bities]){                 // only count the number of 1 bits
+				 bit_occurrence[bities]++;          // add to bits occurrence array[0-7] to find scramble key
 			 }
-			 ++inputfile_bitposition;
+			 inputfile_bitposition++;
          }  // end of byte to bit process
-         cout << endl;
+         cout << endl; // debug
          nextbyte_index++;
 	 } // end read file loop
+
     if (myFileStream.bad()) perror("error while reading file");
 	myFileStream.close();
 //-------------------------------------------------------------------
 	cout << length << " bytes long" << endl;
+	int idxbit = 0;
+	foreach(int occured, bit_occurrence){
+		if (occured==0){
+			occured = number_of_bits/8;   			// All the bits where zeros
+		}
+		cout << "At bit position "<< idxbit << ", " << occured << " bits where present in file or " << (occured * 100)/length << "%" << " of " << length << " bytes" << endl;
+		idxbit++;
+	}
+
+
 //--------------------------------------------------------------------
 
-	boost::dynamic_bitset<> outputBuffer(number_of_bits);		// allocate output buffer, same size as input file
+	bitset<> outputBuffer(number_of_bits);		// allocate output buffer, same size as input file
 
 	uint8_t sk = 50;	// todo test key hard coded
 //	scramble(sk, inputfile_bits, outputBuffer);	// scramble key and pass pointer to source file
@@ -109,16 +126,19 @@ int main()
    todo change from vector use to dynamic bitstrean
 */
 
-void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)    // pass pointer to source file
+
+//void scramble(uint8_t sKey, vector<uint8_t> &inBuff, boost::dynamic_bitset<> *outBuff)    // pass pointer to source file
+void scramble ()
 {
-    bitset <8> scrKey;
-	scrKey= (int)sKey;		// convert scramble key into a binary value
+	bitset<> scrKey(8);
+
+// todo +++	scrKey = (int)sKey;		// convert scramble key into a binary value
 	cout << "Scramble key = "<< scrKey << " ";
 
 	// computer output buffer position and output bit counters to manage over writing boundry
 	// computer bit/byte position of 1bits 0 bits go into the first part of the output buffer
 
-	unsigned long long int inputFileSize=inBuff.capacity();			// using capacity as .size() fails
+	// unsigned long long int inputFileSize=inBuff.capacity();			// using capacity as .size() fails
 
 	double bitOutputSize0 = 0;			// contains next position for bit, zero bits start from postion 0
 	double bitOutputPosition1 = 0;
@@ -129,7 +149,7 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 
 	double percentOfZeroBitsInScrambleKey = (double) zeroBitsInScrambleKey / 8;
 	cout << endl << "The Output file has %" << ( percentOfZeroBitsInScrambleKey*100) << " zero bits, ";
-	bitOutputSize0 = (inputFileSize * percentOfZeroBitsInScrambleKey) * 8;	// times 8 to convert bytes to bits
+//	bitOutputSize0 = (inputFileSize * percentOfZeroBitsInScrambleKey) * 8;	// times 8 to convert bytes to bits
 
 	cout << "That is " <<  bitOutputSize0 << " bits." << endl << endl;
 
@@ -171,13 +191,13 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 	int oneBitIdx = (int) overlapBitOffset+1;		// start of one bits poz or overlap ( +1  could be zero ?????)
 	int bitProcessed = 0;			//
 
-	bitset <8> tempBits;
+	bitset<> tempBits(8);
 
-	bitset <8> zeroByte_output;		// starts from zero but ends on a possible non byte boundry
-	bitset <8> oneByte_output;		// starts from possible non byte boundry, so needs to be loaded withlow bits?
+	bitset<> zeroByte_output(8);		// starts from zero but ends on a possible non byte boundry
+	bitset<> oneByte_output(8);		// starts from possible non byte boundry, so needs to be loaded withlow bits?
 //	bitset <8> overlapByte;			// used to store the overlap byte
 
-	for (int i=0; i<inputFileSize; i++)
+/*	for (int i=0; i<inputFileSize; i++)
 	{
 //		if (i%7==0&&i>0) { cout << endl;}  // text output formating
 
@@ -191,9 +211,9 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 			{
 				if (zeroBitIdx==8)				// is byte full
 				{
-					/* todo out of input data - bits are backwards :(
+					*//* todo out of input data - bits are backwards :(
                      * test is out of input data to process the bit overlap
-                     */
+                     *//*
 					// write byte function
 					outBuff[ob0x]= (uint8_t) zeroByte_output.to_ulong();
 					ob0x++;
@@ -226,18 +246,18 @@ void scramble(uint8_t sKey, vector<uint8_t> &inBuff, vector<uint8_t> &outBuff)  
 		}
 
 
-	}		// end of processing file.  loop through byte extraing bits into the two different parts
+	}	*/	// end of processing file.  loop through byte extraing bits into the two different parts
 
 // write overlap byte to output file
 
 // display processed file
 //	cout << endl << endl;
-	for (int i=0; i<inputFileSize; i++)
+/*	for (int i=0; i<inputFileSize; i++)
 	{
 	//	if (i%7==0&&i>0) { cout << endl;}
-		tempBits = (bitset<8>) outBuff[i];  // was (int) cast
+	//	tempBits = (bitset) outBuff[i];  // was (int) cast
 //		cout << tempBits << " ";
-	}
+	}*/
 
 //	cout << endl;
 
