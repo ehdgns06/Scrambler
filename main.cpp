@@ -11,10 +11,10 @@
 **/
 
 #include <iostream>
-#include <iomanip>
+#include <iomanip>  // do i need this one now?
 #include <fstream>
 #include <vector>
-#include <math.h>
+#include <math.h>  // do i need this one too
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 
@@ -34,14 +34,14 @@ using namespace std;
 int main() {
 //  auto myFileName = "C:/test_data/test.zip";
 //	auto myFileName = "C:/test_data/test.txt";
-	auto myFileName = "C:/test_data/test_s.txt";
+//	auto myFileName = "C:/test_data/test_s.txt";
+	auto myFileName = "C:/test_data/big_ascii.txt";
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
 	cout << endl << "Scramble Compression test file: " << myFileName <<endl;
 
 	//-----------------------------------------------------------------------
 	// loadFile
-	// todo  change to using boost dynamic bitset
 
 	ifstream myFileStream;
 	myFileStream.open ( myFileName, ios::binary );  // open file - should have an if incase of a fail or test good
@@ -75,7 +75,7 @@ int main() {
 
 		for (int bities = 7; bities >=0 ; --bities) { 		// process them bytes into the huge bit array
         	inputfile_bits[inputfile_bitposition] = bits_read[bities];         // store bit into input file
-			cout << bits_read[bities]; // debug
+//			cout << bits_read[bities]; // debug
 
 			if(bits_read[bities]) {                // only count the number of 1 bits
 				bit_occurrence[bities]++;          // add to bits occurrence array[0-7] to find scramble key
@@ -84,7 +84,7 @@ int main() {
 		}  // end of byte to bit process
 
 		nextbyte_index++;
-		cout << endl; // debug
+	//	cout << endl; // debug
 
 	} // end read file loop
 
@@ -100,7 +100,7 @@ int main() {
 		cout << "At bit position "<< idxbit << ", " << occured << " zero bits where present in file or "
              << (occured * 100)/fileLength << "%" << " of " << fileLength << " bytes" << endl;
 
-			if (((occured * 100)/fileLength) > 99) {  // compute scramble key
+			if (((occured * 100)/fileLength) > 51) {  // compute scramble key
 				scrambleKey[idxbit]=0;
 			} else {
 				scrambleKey[idxbit]=1;
@@ -108,9 +108,13 @@ int main() {
 
 		idxbit++;
 	}
-	cout << "scramble key is " << scrambleKey << endl;
+    scrambleKey[7]=0;  // todo bug with high bit
+   // scrambleKey[5]=1;
 
-	bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
+    cout << "scramble key is " << scrambleKey << endl;
+    // todo fix scramble key to work with big files
+
+    bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
 
 
 //	scramble(sk, inputfile_bits, outputBuffer);	// todo build scramble as a function (not needed for ascii test
@@ -179,8 +183,34 @@ int main() {
 
 	/// i should display the output there.
 
-	cout << inputfile_bits << endl;
-	cout << outputBitsBuffer << endl;
+//	cout << inputfile_bits << endl;
+//	cout << outputBitsBuffer << endl;
+
+	//
+	// open file in write file
+	std::ofstream outfile ("C:/test_data/new.txt",std::ofstream::binary);
+
+	uint8_t writeByte = 0;
+	bitset aByte(8);
+
+	// loop though output bitstream converting it to unsign byte and writing to disk   (reverses data)
+	for (int bits = 0; bits < number_of_bits; bits+=8) {
+		aByte[7]=outputBitsBuffer[0+bits];
+		aByte[6]=outputBitsBuffer[1+bits];
+		aByte[5]=outputBitsBuffer[2+bits];
+		aByte[4]=outputBitsBuffer[3+bits];
+		aByte[3]=outputBitsBuffer[4+bits];
+		aByte[2]=outputBitsBuffer[5+bits];
+		aByte[1]=outputBitsBuffer[6+bits];
+		aByte[0]=outputBitsBuffer[7+bits];
+
+		writeByte = static_cast<uint8_t>(aByte.to_ulong());
+		outfile.put(writeByte);
+	}
+	outfile.close();
+	/* // release dynamically-allocated memory
+  delete[] buffer;
+	 */
 
 } // end main
 
