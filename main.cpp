@@ -34,8 +34,8 @@ using namespace std;
 int main() {
 //  auto myFileName = "C:/test_data/test.zip";
 //	auto myFileName = "C:/test_data/test.txt";
-//	auto myFileName = "C:/test_data/test_s.txt";
-	auto myFileName = "C:/test_data/big_ascii.txt";
+	auto myFileName = "C:/test_data/test_s.txt";
+//	auto myFileName = "C:/test_data/big_ascii.txt";
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
 	cout << endl << "Scramble Compression test file: " << myFileName <<endl;
@@ -72,7 +72,7 @@ int main() {
 		for (int bities = 7; bities >=0 ; --bities) {		// process them bytes into the huge bit array
 			inputfile_bits[inputfile_bitposition] = bits_read[bities];	// store bit into input file
 
-//			cout << bits_read[bities]; // debug
+			cout << bits_read[bities]; // debug
 
 			if(bits_read[bities]) {					// only counting the number of bits that are 1
 				bit_occurrence[bities]++;			// add to bit occurrence array[0-7] to find scramble key
@@ -81,21 +81,12 @@ int main() {
 		}  // end of byte to bit process
 
 		nextbyte_index++;
-//		cout << endl; // debug
+		cout << endl; // debug
 
 	} // end read file loop
 
 	if (myFileStream.bad()) perror("error while reading file");
 	myFileStream.close();											// could be better but meh
-
-	cout << "bit 0 = " << bit_occurrence[0] << endl;
-	cout << "bit 1 = " << bit_occurrence[1] << endl;
-	cout << "bit 2 = " << bit_occurrence[2] << endl;
-	cout << "bit 3 = " << bit_occurrence[3] << endl;
-	cout << "bit 4 = " << bit_occurrence[4] << endl;
-	cout << "bit 5 = " << bit_occurrence[5] << endl;
-	cout << "bit 6 = " << bit_occurrence[6] << endl;
-	cout << "bit 7 = " << bit_occurrence[7] << endl << endl;		// should be zero but there is ascii that is greater than 128(dec) code
 
 /*-------------------------------------------------------------------
 	compute the scramble key
@@ -129,7 +120,7 @@ int main() {
 
 	cout << "scramble key is " << scrambleKey << endl;
 	scrambleKey[7]=0;
-	cout << "scramble key is " << scrambleKey << endl;
+	cout << "scramble key should be " << scrambleKey << endl;
 
 
 	bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
@@ -137,20 +128,10 @@ int main() {
 
 //	scramble(sk, inputfile_bits, outputBuffer);	// todo build scramble as a function (not needed for ascii test
 /** scramble key and pass pointer to source file
-	todo unscramble and test to original file. */
-
-//-----------------------------------------------------------------
 ///----------------------------------------------------------------
 ///	return 0;
 /// }  // end main  todo old end of main as below is the function.
-///----------------------------------------------------------------
-//-----------------------------------------------------------------
-
-
-/* ----------------------------------------------------------------------
-   slipping into the scramble routine
-   todo change to a function once it is working
-*/
+///----------------------------------------------------------------*/
 
 //void scramble(boost::dynamic_bitset<> sKey, boost::dynamic_bitset<> &inBuff, boost::dynamic_bitset<> *outBuff)
 // pass pointer to source file
@@ -208,7 +189,7 @@ int main() {
 
 	//
 	// open file in write file
-	std::ofstream outfile ("C:/test_data/new.txt",std::ofstream::binary);
+/*	std::ofstream outfile ("C:/test_data/new.txt",std::ofstream::binary);
 
 	uint8_t writeByte = 0;
 	bitset aByte(8);
@@ -228,8 +209,53 @@ int main() {
 		outfile.put(writeByte);
 	}
 
-	outfile.close();
+	outfile.close();*/
 
+	// de scramble
+
+	/*
+	 * take scramble key and computer offset of scrambled bits
+	 * loop through outputbits and putting them back into newoptput
+	 *
+	 */
+
+	bitset newOutPut(fileLength);
+	/// reusing variables
+	zeroBitsInScrambleKey = (uint8_t) (8-scrambleKey.count());		// returns number of 0 bits are in scramble key
+	OutputPositionForKeysOneBits = (int) zeroBitsInScrambleKey*8;   // offset to one bits block in the output file
+	// number_of_bits = ...
+
+
+	/*  ---  do the DE scrambling transformation of the bits   --- */
+
+	ob0x = 0;									// output buffer zero bit index
+	ob1x = OutputPositionForKeysOneBits;		// output buffer one  bit index
+
+	for (long bitnew=0; bitnew < number_of_bits; bitnew++) {  	// loop through all the bits in the output buffer  (long?)
+
+		for (int theBit = 7; theBit >=0 ; --theBit) {	// loop through the scramble key pulling bits from the correct part of the output buffer
+			if (scrambleKey[theBit]==0) { 				// test if scramble key bit is zero
+				newOutPut[bitnew]=outputBitsBuffer[ob0x]; ///  todo crashing bug
+				ob0x++;
+			}
+			else								// scramble key bit was a one
+			{
+				newOutPut[bitnew]=outputBitsBuffer[ob1x];  ///  todo crashing bug
+				ob1x++;
+			}
+		bitnew++;   /// as we arr doing 8 bits in this sub loop
+
+		}
+
+	}		// end of processing file.  loop through byte extracting bits into the two different parts
+
+	for (int j = 0; j < number_of_bits ; ++j) {
+		for (int e = 0; e < 8; ++e) {
+			cout << newOutPut[j]; // debug
+			j++;
+		}
+		cout << endl;
+	}
 
 } // end main
 
