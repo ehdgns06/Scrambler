@@ -223,7 +223,7 @@ int main() {
 	 *   ---  do the DE scrambling transformation of the bits   ---
 	 * todo use clean variables?
 	 */
-/// reusing variables
+/// reusing variables 
 
 	bitset newOutPut(fileLength);
 	zeroBitsInScrambleKey = (uint8_t) (8-scrambleKey.count());		// returns number of 0 bits are in scramble key
