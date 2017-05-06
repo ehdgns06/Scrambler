@@ -1,12 +1,14 @@
 /**
 @param should_pass_it_a_file
 @authr Brett Cooper
-@version 0.5
+@version 0.8
 @title scramble compression
+@copyright  https://creativecommons.org/licenses/by/3.0/nz/legalcode
+@copybrief basically attribute but job offers welcome
 
-	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit
+	About: https://docs.google.com/document/d/1VPEX7MCoDrxOEC11lldJhpyzcPqs6bcEY3G-vfjWjvw/edit  < should make public but are messier than code
 
- An experimental transformative algorythem
+ An experimental prof of concept transformative algorythem
 
 **/
 
@@ -24,7 +26,7 @@
 using namespace std;
 
 // predefine functions
-//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file todo
+//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file (one day
 
 
 /** once i workout the 1bit start pos i can then track it for that overlap byte
@@ -33,8 +35,8 @@ using namespace std;
 */
 int main() {
 //  auto myFileName = "C:/test_data/test.zip";
-//	auto myFileName = "C:/test_data/test.txt";
-	auto myFileName = "C:/test_data/test_s.txt";
+	auto myFileName = "C:/test_data/test.txt";
+//	auto myFileName = "C:/test_data/test_s.txt";
 //	auto myFileName = "C:/test_data/big_ascii.txt";
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
@@ -99,6 +101,7 @@ int main() {
 	bitset scrambleKey(8);
 
 	foreach(unsigned long occured, bit_occurrence) {	// work out most used bits for scramble key pattern
+					// var bool = (fileLength-occured) > (fileLength/2); todo avoid this becoming a negative number?
 		cout << "Bit "<< idxbit << " is set to " ;
 
 			if ((fileLength-occured) > (fileLength/2)) {	// compute scramble key.
@@ -126,7 +129,7 @@ int main() {
 	bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
 
 
-//	scramble(sk, inputfile_bits, outputBuffer);	// todo build scramble as a function (not needed for ascii test
+//	scramble(sk, inputfile_bits, outputBuffer);	// one day  build scramble as a function (not needed for ascii test
 /** scramble key and pass pointer to source file
 ///----------------------------------------------------------------
 ///	return 0;
@@ -217,33 +220,31 @@ int main() {
 	 * take scramble key and computer offset of scrambled bits
 	 * loop through outputbits and putting them back into newoptput
 	 *
+	 *   ---  do the DE scrambling transformation of the bits   ---
+	 * todo use clean variables?
 	 */
+/// reusing variables
 
 	bitset newOutPut(fileLength);
-	/// reusing variables
 	zeroBitsInScrambleKey = (uint8_t) (8-scrambleKey.count());		// returns number of 0 bits are in scramble key
 	OutputPositionForKeysOneBits = (int) zeroBitsInScrambleKey*8;   // offset to one bits block in the output file
-	// number_of_bits = ...
-
-
-	/*  ---  do the DE scrambling transformation of the bits   --- */
 
 	ob0x = 0;									// output buffer zero bit index
 	ob1x = OutputPositionForKeysOneBits;		// output buffer one  bit index
 
-	for (long bitnew=0; bitnew < number_of_bits; bitnew++) {  	// loop through all the bits in the output buffer  (long?)
+	for (long theNextBit=0; theNextBit < number_of_bits; theNextBit++) {  	// loop through all the bits in the output buffer  (long?)
 
 		for (int theBit = 7; theBit >=0 ; --theBit) {	// loop through the scramble key pulling bits from the correct part of the output buffer
 			if (scrambleKey[theBit]==0) { 				// test if scramble key bit is zero
-				newOutPut[bitnew]=outputBitsBuffer[ob0x]; ///  todo crashing bug
+				newOutPut[theNextBit]=outputBitsBuffer[ob0x]; ///  todo crashing bug
 				ob0x++;
 			}
 			else								// scramble key bit was a one
 			{
-				newOutPut[bitnew]=outputBitsBuffer[ob1x];  ///  todo crashing bug
+				newOutPut[theNextBit]=outputBitsBuffer[ob1x];  ///  todo crashing bug
 				ob1x++;
 			}
-		bitnew++;   /// as we arr doing 8 bits in this sub loop
+		theNextBit++;   /// as we arr doing 8 bits in this sub loop
 
 		}
 
