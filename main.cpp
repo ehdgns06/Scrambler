@@ -11,8 +11,8 @@
  An experimental prof of concept transformative algorythem
 
 **/
-#define testing  false // true
-
+#define testing   true
+#define testing2  false
 
 #include <iostream>
 #include <iomanip>  // do i need this one now?
@@ -38,8 +38,8 @@ using namespace std;
 */
 int main() {
 //  auto myFileName = "C:/test_data/test.zip";
-//	auto myFileName = "C:/test_data/test.txt";
-	auto myFileName = "C:/test_data/test_s.txt";
+	auto myFileName = "C:/test_data/test.txt";
+//	auto myFileName = "C:/test_data/test_s.txt";
 //	auto myFileName = "C:/test_data/big_ascii.txt";
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
@@ -69,30 +69,32 @@ int main() {
 	long nextbyte_index=0;
 	uint8_t byte_read;						// 8 bit byte buffer for reading input file
 
-	/* read the file into binary format and count up what bits are present in each byte of the file.  */
+	/* read the file into binary format and count up what bits are present in each byte of the file. todo */
 
 	while(myFileStream >> std::noskipws >> byte_read) {		// read in file loop one byte at a time
 		bitset bits_read(8,byte_read);						// convert byte to a 8 bit binary bitset
 
 		for (int bities = 7; bities >=0 ; --bities) {		// process them bytes into the huge bit array
 			inputfile_bits[inputfile_bitposition] = bits_read[bities];	// store bit into input file
-  			#if testing == true
+
+  			#if testing2 == true
 			cout << bits_read[bities]; // debug
-			#endif
-			if(bits_read[bities]) {					// only counting the number of bits that are 1
+			  #endif
+
+			// count how many of each bit in file
+			if(bits_read[bities]==1) {				// only counting the number of bits that are 1
 				bit_occurrence[bities]++;			// add to bit occurrence array[0-7] to find scramble key
 			}
 			inputfile_bitposition++;
 		}  // end of byte to bit process
-		#if testing == true
-		cout << " " << byte_read << "  " ; // debug
-		#endif
 		nextbyte_index++;
 
-
+		#if testing2 == true
+		cout << " " << byte_read << "  " ; // debug
+		#endif
 	} // end read file loop
 
-	#if testing == true
+	#if testing2 == true
 	cout << endl << endl;
 	#endif
 
@@ -100,22 +102,17 @@ int main() {
 	myFileStream.close();											// could be better but meh
 
 /*-------------------------------------------------------------------
-	compute the scramble key
-
- and my labels and documentation keeps inverting
-
- This key might be backwards
-
+	compute the scramble key todo
 -------------------------------------------------------------------*/
 	int idxbit = 0;										// index
-	bitset scrambleKey(8);
+	bitset scrambleKey(8);								// define the variable to hold scramble key
 	long halfFileLen = (fileLength/2);
 
-	foreach(unsigned long occured, bit_occurrence) {	// work out most used bits for scramble key pattern
+	foreach(unsigned long occured, bit_occurrence) {	// work out most used zero bits for scramble key pattern
 		#if testing == true
 		cout << "Bit "<< idxbit << " is set to " ;
 		#endif
-			if (occured < halfFileLen) {	// compute scramble key.
+			if (occured < halfFileLen) {	// compute scramble key. if pile of 1 bits is less than half the total
 				scrambleKey[idxbit]=0;
 				#if testing == true
 				cout << "0. ";
@@ -139,82 +136,45 @@ int main() {
 
 	cout << "scramble key is " << scrambleKey << endl;
 
-//	scrambleKey[7]=1;  // so odd that this is reversed
-//	cout << "scramble key changed too " << scrambleKey << endl;
-
 	bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
 
-//	scramble(sk, inputfile_bits, outputBuffer);	// one day  build scramble as a function (not needed for ascii test
-/** scramble key and pass pointer to source file
-///----------------------------------------------------------------
-///	return 0;
-/// }  // end main
-///----------------------------------------------------------------*/
-
-//void scramble(boost::dynamic_bitset<> sKey, boost::dynamic_bitset<> &inBuff, boost::dynamic_bitset<> *outBuff)
-// pass pointer to source file
-//void scramble ()
-//{
-
-
 /// ----------------------------------------------------------------------------------------------------
-/// computer the bit postion in the output buffer where the scramble keys 1 bits will start at
-/// zero bits * number of bytes = bit size of zero bits block
-/// one bits * number of bytes = bit size of one bits block
-
+// add up the one bits in the file where the scramble keys 1 bits will start at todo +1?
 
 	long OutputPositionForKeysOneBits;
+	OutputPositionForKeysOneBits = bit_occurrence[0]+bit_occurrence[1]+bit_occurrence[2]+bit_occurrence[3]+bit_occurrence[4]+bit_occurrence[5]+bit_occurrence[6]+bit_occurrence[7];  // +1?
 
-	uint8_t zeroBitsInScrambleKey = (uint8_t) (8-scrambleKey.count());		// 8-[number of set bits]  returns number of 0 bits are in scramble key
-	OutputPositionForKeysOneBits = (long) zeroBitsInScrambleKey*fileLength;	// size of the keys zero bits block = (8-[number of set bits]) * fileLength in bytes
 	#if testing == true
-	cout << endl << "Scramble key has " << (long) zeroBitsInScrambleKey << " zero bits" << endl;
 	cout << "The start position for the 1 bits in the output file/buffer starts at bit " << OutputPositionForKeysOneBits << endl;
 	#endif
 /// ----------------------------------------------------------------------------------------------------
 
-
 /*  ---  do the scrambling transformation of the bits   ------------------------------------------------ */
 
-	long ob0x = 0;							// output buffer zero bit index
-	long ob1x = OutputPositionForKeysOneBits;// output buffer one  bit index
-	long bitProcessed = 0;					//  this is the propper index for the input buffer as i sub look through the scramble key throwing out i
+	long ob0x = 0;								// output buffer zero bit index
+	long ob1x = OutputPositionForKeysOneBits;	// output buffer one  bit index ?+1
+	long bitProcessed = 0;						//  this is the proper index for the input buffer as i sub look through the scramble key throwing out i
 
-	for (long i=0; i < number_of_bits; i++) {  // loop through all the bits in the input buffer
-
-
-		for (int theBit = 7; theBit >=0 ; --theBit) {	// loop through the scramble key putting the bits into the correct part of the output buffer
-			if (scrambleKey[theBit]==0) { 		// test if scramble key bit is zero
-				// store bit
-				#if testing == true
-				cout << "-" << inputfile_bits[bitProcessed] << " ";
-				#endif
-				outputBitsBuffer[ob0x]=inputfile_bits[bitProcessed];
+	for (long anotherBit=0; anotherBit < number_of_bits; anotherBit++) {// loop through all the bits in the input buffer  (todo this could be reversed????)
+		for (int theBit = 7; theBit >=0 ; --theBit) {				// loop through the scramble key putting the bits into the correct part of the output buffer
+			if (scrambleKey[theBit]==0) { 							// test if scramble key bit is zero
+				outputBitsBuffer[ob0x]=inputfile_bits[bitProcessed];// store bit
 				ob0x++;
-			}
-			else								// scramble key bit was a one
-			{
+			} else {							// scramble key bit was a one
 				outputBitsBuffer[ob1x]= inputfile_bits[bitProcessed];
-				#if testing == true
-				cout << "+" << inputfile_bits[bitProcessed] << " ";
-				#endif
 				ob1x++;
 			}
-			bitProcessed++;						// bit processed counter
-			i++;   /// can i inc this counter here
+			bitProcessed++;						// bit processed counter for input file data
+			anotherBit++;   /// increment the main look as we processed another bit
 		}
-		#if testing == true
-		cout << endl;
-		#endif
-
 	}		// end of processing file.  loop through byte extracting bits into the two different parts
 
 	#if testing == true
-	cout << "input     " << inputfile_bits << endl;
-	cout << "output    " << outputBitsBuffer << endl;
+	cout << endl << "input     " << inputfile_bits << endl;
+	cout << endl << "output    " << outputBitsBuffer << endl;
 	#endif
 
-	//
+	// ----------------------------------------------------------------------------------------
 	// open file in write file
 /*	std::ofstream outfile ("C:/test_data/new.txt",std::ofstream::binary);
 
@@ -238,36 +198,30 @@ int main() {
 
 	outfile.close();*/
 
+	//----------------------------------------------------------------------------
 	// de scramble
-
 	/*
 	 * take scramble key and computer offset of scrambled bits
 	 * loop through outputbits and putting them back into newoptput
 	 *
 	 *   ---  do the DE scrambling transformation of the bits   ---
-	 *
-	 * looks good. NB output is reversed
-	 *
+	 *	 *
 	 * I should write the output as a uint_8 instead of a binary to a stream
-	 */
+	 *-----------------------------------------------------------------------------*/
 
-	zeroBitsInScrambleKey = (uint8_t) (8-scrambleKey.count());
-	OutputPositionForKeysOneBits = (long) zeroBitsInScrambleKey*fileLength;
-
-	long outputBufferBits0index = 0;									// output buffer zero bit index
-	long outputBufferBits1index = OutputPositionForKeysOneBits;		// output buffer one  bit index
+	long outputBufferBits0index = 0;							// output buffer zero bit index
+	long outputBufferBits1index = OutputPositionForKeysOneBits;	// output buffer one  bit index
 
 	bitset decoded(number_of_bits);
-	long at_Bit=0;
+	long at_Bit = 0; // index for building decoded data
 
-	#if testing == true
-	cout << "backwards ";
-	#endif
-	for (long theNextBit=fileLength-1; theNextBit >= 0; --theNextBit) {  	// loop through all the bits in the output buffer a byte at a time
-		for (int TheKeysBit = 7; TheKeysBit >=0 ; --TheKeysBit) {	        // loop through the scramble key pulling bits from the correct part of the output buffer
-			if (scrambleKey[TheKeysBit]==0) { 								// test if scramble key bit is zero
+	// todo backwards  << lazy book mark
+
+	for (long theNextBit=fileLength; theNextBit > 0; --theNextBit) {	// loop through all the bits in the output buffer a byte at a time
+		for (int TheKeysBit = 7; TheKeysBit >=0 ; --TheKeysBit) {		// loop through the scramble key pulling bits from the correct part ( 0 or 1 block) of the output buffer
+			if (scrambleKey[TheKeysBit]==0) { 							// test if scramble key bit is zero
 				#if testing == true
-				cout << outputBitsBuffer[outputBufferBits0index];
+//				cout << outputBitsBuffer[outputBufferBits0index];
 				#endif
 				decoded[at_Bit] = outputBitsBuffer[outputBufferBits0index];
 				outputBufferBits0index++;
@@ -276,7 +230,7 @@ int main() {
 			else								// scramble key bit was a one
 			{
 				#if testing == true
-				cout << outputBitsBuffer[outputBufferBits1index];
+				// cout << outputBitsBuffer[outputBufferBits1index];
 				#endif
 				decoded[at_Bit] = outputBitsBuffer[outputBufferBits1index];
 				outputBufferBits1index++;
@@ -284,9 +238,10 @@ int main() {
 			}
 		}
 	}		// end of processing file.  loop through byte extracting bits into the two different parts
+	// todo decode << lazy book mark
 
 	#if testing == true
-	cout << endl << "decoded   " << decoded << endl;
+	cout << endl << "forward" << endl << "decoded   " << decoded << endl;
 	#endif
 
 // write restored file
@@ -297,6 +252,7 @@ int main() {
 
 	uint8_t writeByte = 0;
 	bitset aByte(8);
+
 
 	// loop though output bitstream converting it to unsign byte and writing to disk   (reverses data)
 	for (int bits = 0; bits < number_of_bits; bits+=8) {
