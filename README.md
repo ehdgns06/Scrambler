@@ -1,6 +1,6 @@
-# Scramble_test
+# Scrambler
 
-version 0.6
+version 0.9
 
 testing ideas about scrambling data for compression using transformative routines
 
