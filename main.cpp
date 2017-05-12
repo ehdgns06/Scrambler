@@ -14,6 +14,7 @@
 #define testing   true
 #define testing2  false
 
+
 #include <iostream>
 #include <iomanip>  // do i need this one now?
 #include <fstream>
@@ -22,26 +23,58 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 
+
 #define foreach BOOST_FOREACH
 #define bitset	boost::dynamic_bitset<>
 
 
 using namespace std;
 
-// predefine functions
-//void scramble(uint8_t sKey, boost::dynamic_bitset & inBuff, boost::dynamic_bitset & outBuff);    // pass pointer to source file (one day
-
+//  auto myFileName = "C:/test_data/test.zip";
+	auto myFileName = "C:/test_data/test.txt";
+//  auto myFileName = "C:/test_data/a.txt";
+//	auto myFileName = "C:/test_data/test_s.txt";
+//	auto myFileName = "C:/test_data/big_ascii.txt";
 
 /** once i workout the 1bit start pos i can then track it for that overlap byte
 	easy way to test the split is to have the test file filled with the value of the scramble key
 	that way i would end up with all zero and one bits.
 */
-int main() {
-//  auto myFileName = "C:/test_data/test.zip";
-//	auto myFileName = "C:/test_data/test.txt";
-	auto myFileName = "C:/test_data/a.txt";
-//	auto myFileName = "C:/test_data/test_s.txt";
-//	auto myFileName = "C:/test_data/big_ascii.txt";
+int main(int argc, const char *argv[]) {
+
+	// if argc < 2 display help
+	// if argv[1] = "h" or "help" or "H" or "HELP" Display help
+	// if argv[1] = "t" or "T" and there is argv[1] then see if that file exists
+	// if argv[1] = "d" or "D" and there is argv[1] and the file exists and has an extension .sc
+
+	cout << "Have " << argc << " arguments:" << endl;
+
+	if (argc != 3)
+	{
+		cout << "Usage: " << argv[0] << " [t or d] and the file to scramble" << endl;
+		return 1;
+	}
+
+	if ((argv[1] = "t"))
+	{
+		cout << "Scrambling  " << argv[2] << " to " << argv[2] << "+scram+key+offset lol" <<endl;
+
+		// pass as myFileName and check if the file exists
+		goto scramble;
+
+	}
+
+	if ((argv[1] = "d"))
+	{
+		cout << "Restoring  " << argv[2] << " to " << argv[2] << "name - scram key offset" <<endl;
+		// chech filename has scram and a key and an offset.  filesize is equal to the filesize
+		// pass as myFilename
+		// load into buffer (reuse load routine/function)
+		// set output filename - scram key offset
+		//goto descramble;
+	}
+
+scramble:
 
 	cout.setf  ( ios::right | ios::showbase | ios_base::uppercase);  // set cout default chartype
 	cout << endl << "Scramble Compression test file: " << myFileName <<endl;
@@ -134,14 +167,7 @@ int main() {
 		#endif
 		idxbit++;
 	}
-/*	scrambleKey[7]=1;
-	scrambleKey[6]=1;
-	scrambleKey[5]=1;
-	scrambleKey[4]=1;
-	scrambleKey[3]=0;
-	scrambleKey[2]=0;
-	scrambleKey[1]=0;
-	scrambleKey[0]=0;*/
+
 	cout << "scramble key is " << scrambleKey << endl;
 
 	bitset outputBitsBuffer(number_of_bits); // allocate output buffer, same size as input file
@@ -151,7 +177,7 @@ int main() {
 
 	long OutputPositionForKeysOneBits;
 	OutputPositionForKeysOneBits = number_of_bits-(bit_occurrence[0]+bit_occurrence[1]+bit_occurrence[2]+bit_occurrence[3]+bit_occurrence[4]+bit_occurrence[5]+bit_occurrence[6]+bit_occurrence[7]);
-	cout << "1 bits takes up " << (bit_occurrence[0]+bit_occurrence[1]+bit_occurrence[2]+bit_occurrence[3]+bit_occurrence[4]+bit_occurrence[5]+bit_occurrence[6]+bit_occurrence[7]) << " bytes" <<endl;
+	cout << "1 bits takes up " << (bit_occurrence[0]+bit_occurrence[1]+bit_occurrence[2]+bit_occurrence[3]+bit_occurrence[4]+bit_occurrence[5]+bit_occurrence[6]+bit_occurrence[7]) << " bits" <<endl;
 	#if testing == true
 	cout << "The start position for the 1 bits in the output file/buffer starts at bit " << OutputPositionForKeysOneBits << endl;
 	#endif
