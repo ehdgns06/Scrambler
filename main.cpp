@@ -184,10 +184,14 @@ scramble:
 /// ----------------------------------------------------------------------------------------------------
 
 /*  ---  do the scrambling transformation of the bits   ------------------------------------------------ */
+// todo the ob0x and ob1x are not stopping at correct boundaries. 100 bytes 800 bits ob0x goes to 500 not 421 (79 or 80 bits too many) ob0x is short 79 / 80
+// the counting of bits is bad
 
 	long ob0x = 0;								// output buffer zero bit index
 	long ob1x = OutputPositionForKeysOneBits;	// output buffer one  bit index
 	long bitProcessed = 0;						//  this is the proper index for the input buffer as i sub look through the scramble key throwing out i
+
+	cout << "ob0x = " << ob0x << " ob1x = " << ob1x << endl;
 
 	for (long anotherBit=0; anotherBit < number_of_bits; anotherBit++) {// loop through all the bits in the input buffer
 		for (int theBit = 7; theBit >=0 ; --theBit) {				// loop through the scramble key putting the bits into the correct part of the output buffer
@@ -202,12 +206,13 @@ scramble:
 			anotherBit++;   /// increment the main look as we processed another bit
 		}
 		anotherBit--;  // don't skip a bit at the end of a byte.
+
 	}		// end of processing file.  loop through byte extracting bits into the two different parts
 
 	#if testing == true
 	cout << "ob0x = " << ob0x << " ob1x = " << ob1x << endl << "number of bits " << number_of_bits << endl;
 	cout << endl << "input     " << inputfile_bits << endl;
-	cout << endl << "output    " << outputBitsBuffer << endl;
+//	cout << endl << "output    " << outputBitsBuffer << endl;
 	#endif
 
 	// ----------------------------------------------------------------------------------------
@@ -258,8 +263,6 @@ scramble:
 				//cout << outputBitsBuffer[outputBufferBits0index];
 				#endif
 				decoded[at_Bit] = outputBitsBuffer[outputBufferBits0index];
-				outputBufferBits0index++;
-				at_Bit++;
 			}
 			else						// scramble key bit was a one
 			{
@@ -267,9 +270,9 @@ scramble:
 				//cout << outputBitsBuffer[outputBufferBits1index];
 				#endif
 				decoded[at_Bit] = outputBitsBuffer[outputBufferBits1index];
-				outputBufferBits1index++;
-				at_Bit++;
 			}
+			at_Bit++;
+			outputBufferBits1index++;
 		}
 	}		// end of processing file.  loop through byte extracting bits into the two different parts
 	// todo decode << lazy book mark
